@@ -1,58 +1,55 @@
-# Smart Contract Vulnerability Detection and Classification System
+# AegisGuard - Smart Contract Security Analyzer
 
-A simple, readable, and explainable Python implementation based on our research paper:
+A modern, explainable AI and AST-based vulnerability detection system for Ethereum Solidity smart contracts, implementing the methodology from:
 > **"Machine Learning-Based Detection and Classification of Smart Contract Vulnerabilities: A Comparative Study"**
 
 ---
 
-## Project Structure (Only 3 Main Python Files)
+## Key Features
+
+- **Modern Web3 Cyber Dashboard**: Dual-panel studio featuring a responsive code editor with synchronized line numbers, drag-and-drop `.sol` uploads, and animated scanning HUD.
+- **Dual-Stage ML Detection**: 
+  - **Stage 1 (Binary Detection)**: Linear Support Vector Machine (LinearSVC) over 50,000 TF-IDF unigram and bigram features.
+  - **Stage 2 (Classification)**: One-vs-Rest (OvR) Logistic Regression classifying 8 independent threat vectors.
+- **Zero-Hallucination Line Localization**: Static AST pattern matching pinpointing the exact code line, explaining the flaw, and providing verifiable remediation fixes.
+- **Interactive Remediation & Reporting**: One-click Markdown Security Audit export and downloadable JSON audit reports.
+
+---
+
+## Project Structure
 
 ```text
 smart-contract-security-analyzer/
-├── train_model.py        # 1. Loads dataset, extracts TF-IDF, trains SVM & Logistic Regression, saves with joblib
-├── predict.py            # 2. Loads saved models, predicts vulnerabilities, checks code patterns, returns dict
-├── app.py                # 3. Single-page Streamlit web app for uploading/pasting Solidity contracts
-├── requirements.txt      # Essential dependencies (pandas, numpy, scikit-learn, joblib, streamlit)
-├── sample_contracts/     # 5 sample .sol contracts for live demonstration
-├── models/saved/         # Saved .joblib models and TF-IDF vectorizers
-└── data/raw/             # Pre-split dataset (balanced_stage1_resplit_721)
+├── server.py              # High-performance FastAPI server & REST API
+├── static/                # Modern Web Dashboard (Vanilla CSS + JS)
+│   ├── index.html         # Cyber dark UI structure
+│   ├── style.css          # Glassmorphic responsive styling & animations
+│   └── app.js             # Interactive editor, line highlighting & audit flow
+├── predict.py             # Inference pipeline & static AST rule-based checks
+├── train_model.py         # Model training script for Linear SVM & OvR Logistic Regression
+├── app.py                 # Legacy Streamlit interface (alternative)
+├── requirements.txt       # Dependencies (pandas, numpy, scikit-learn, joblib, fastapi, uvicorn)
+├── sample_contracts/      # Demonstrative .sol test contracts (Reentrancy, Access Control, Clean, etc.)
+└── models/saved/          # Serialized .joblib models and TF-IDF vectorizers
 ```
 
 ---
 
-## Application Flow
+## Quickstart Guide
 
-```text
-Upload or Paste Solidity Contract (.sol)
-        ↓
-TF-IDF Preprocessing (Comment Removal + Lowercase + Unigram/Bigram TF-IDF)
-        ↓
-Linear SVM Vulnerability Detection (Vulnerable vs. Clean)
-        ↓
-One-vs-Rest Logistic Regression Classification (8 Vulnerability Categories)
-        ↓
-Basic Solidity Code-Pattern Verification (Exact Line Numbers & Coding Mistake)
-        ↓
-Suggested Security Solution
+### 1. Install Dependencies
+```powershell
+pip install -r requirements.txt
 ```
 
----
+### 2. Launch Modern Web Dashboard (Recommended)
+```powershell
+python server.py
+```
+Open your browser at: **[http://localhost:8080](http://localhost:8080)**
 
-## How to Run the Project
-
-1. **Install dependencies:**
-   ```powershell
-   cd c:\Users\Sayali\Downloads\smart-contract-security-analyzer
-   pip install -r requirements.txt
-   ```
-
-2. **(Optional) Retrain the models:**
-   The trained models are already saved in `models/saved/`. To train them again:
-   ```powershell
-   python train_model.py
-   ```
-
-3. **Launch the Streamlit application:**
-   ```powershell
-   streamlit run app.py
-   ```
+### 3. Alternative: Launch Legacy Streamlit App
+```powershell
+streamlit run app.py
+```
+Open your browser at: **http://localhost:8501**

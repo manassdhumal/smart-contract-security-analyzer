@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AegisGuard | Smart Contract Security Intelligence & Vulnerability Auditor</title>
+  <meta name="description" content="AI-Powered & Static AST Smart Contract Security Analyzer for Solidity. Detect Reentrancy, Access Control, and 8 Vulnerability Categories using SVM and One-vs-Rest ML.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <!-- Ambient background glow layers -->
+  <div class="ambient-glow glow-top-left"></div>
+  <div class="ambient-glow glow-bottom-right"></div>
+  <div class="grid-overlay"></div>
+
+  <!-- Header Navbar -->
+  <header class="app-header">
+    <div class="header-inner">
+      <div class="brand-group">
+        <div class="brand-logo-container">
+          <svg class="shield-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <path d="m9 12 2 2 4-4" stroke-dasharray="16" stroke-dashoffset="0"/>
+          </svg>
+          <span class="logo-pulse"></span>
+        </div>
+        <div>
+          <div class="brand-title">AEGIS<span class="brand-highlight">GUARD</span></div>
+          <div class="brand-subtitle">Smart Contract Security Intelligence</div>
+        </div>
+      </div>
+
+      <div class="header-badges">
+        <div class="tech-pill">
+          <span class="pill-dot emerald-pulse"></span>
+          <span>SVM & OvR-LR Engine</span>
+        </div>
+        <div class="tech-pill">
+          <svg class="mini-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="16 18 22 12 16 6"></polyline>
+            <polyline points="8 6 2 12 8 18"></polyline>
+          </svg>
+          <span>Solidity ^0.8.x</span>
+        </div>
+        <a href="https://github.com/manassdhumal/smart-contract-security-analyzer" target="_blank" rel="noopener noreferrer" class="btn-github">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+            <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-layout">
+    
+    <!-- Top Stats Banner -->
+    <section class="metrics-ribbon">
+      <div class="metric-card">
+        <div class="metric-label">DETECTION ARCHITECTURE</div>
+        <div class="metric-val">Hybrid ML + Static AST</div>
+        <div class="metric-sub">Linear SVM + 8x OvR Classifiers</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">FEATURE SPACE</div>
+        <div class="metric-val">50,000 TF-IDF</div>
+        <div class="metric-sub">Word Unigrams & Bigrams</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">COVERED THREAT VECTORS</div>
+        <div class="metric-val">8 Categories</div>
+        <div class="metric-sub">Reentrancy, Access Control, Randomness & More</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">EXPLAINABILITY</div>
+        <div class="metric-val">Line-Level Attribution</div>
+        <div class="metric-sub">Zero Hallucinations Verified Patterns</div>
+      </div>
+    </section>
+
+    <!-- Main Workspace Split Grid -->
+    <div class="workspace-grid">
+      
+      <!-- LEFT COLUMN: Code Studio -->
+      <section class="panel code-studio-panel">
+        <div class="panel-header">
+          <div class="panel-title-group">
+            <span class="panel-icon code-icon">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="16 18 22 12 16 6"></polyline>
+                <polyline points="8 6 2 12 8 18"></polyline>
+              </svg>
+            </span>
+            <h2>Solidity Contract Studio</h2>
+          </div>
+          
+          <div class="quick-presets">
+            <span class="preset-label">Quick Samples:</span>
+            <div id="quickSamplePills" class="pill-group">
+              <button type="button" class="sample-btn" data-file="2_reentrancy_vault.sol">Reentrancy</button>
+              <button type="button" class="sample-btn" data-file="3_access_control_wallet.sol">Access Control</button>
+              <button type="button" class="sample-btn" data-file="5_multi_vulnerability_lottery.sol">Multi-Threat</button>
+              <button type="button" class="sample-btn sample-safe" data-file="1_safe_simple_storage.sol">Clean / Safe</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="editor-toolbar">
+          <div class="toolbar-left">
+            <label for="sampleSelect" class="sr-only">Choose Contract</label>
+            <div class="custom-select-wrapper">
+              <select id="sampleSelect" class="custom-select" title="Select a sample contract">
+                <option value="">Load Sample Contract...</option>
+              </select>
+            </div>
+
+            <label class="btn-tool file-upload-btn" title="Upload local .sol file">
+              <input type="file" id="fileUploadInput" accept=".sol,.txt" hidden>
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+              <span>Upload .sol</span>
+            </label>
+
+            <button type="button" id="clearBtn" class="btn-tool" title="Clear Code Editor">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+              <span>Clear</span>
+            </button>
+          </div>
+
+          <div class="toolbar-right">
+            <span id="editorStats" class="editor-stats-text">0 lines | 0 chars</span>
+          </div>
+        </div>
+
+        <!-- Custom Code Editor with Line Numbers -->
+        <div class="editor-container" id="editorContainer">
+          <div class="line-gutter" id="lineGutter">1</div>
+          <textarea 
+            id="codeEditor" 
+            class="code-textarea" 
+            spellcheck="false" 
+            placeholder="// Paste or upload your Solidity smart contract here...&#10;// Or click one of the quick samples above to begin analysis."
+          ></textarea>
+        </div>
+
+        <!-- Action Bar -->
+        <div class="editor-footer">
+          <div class="hotkey-tip">
+            <kbd>Ctrl</kbd> + <kbd>Enter</kbd> to run audit
+          </div>
+          <button type="button" id="analyzeBtn" class="btn-primary">
+            <span class="btn-icon">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5">
+                <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+              </svg>
+            </span>
+            <span id="analyzeBtnText">Analyze Contract Security</span>
+          </button>
+        </div>
+      </section>
+
+      <!-- RIGHT COLUMN: Security Audit Intelligence Dashboard -->
+      <section class="panel audit-dashboard-panel">
+        
+        <!-- Tab Navigation Header -->
+        <div class="dashboard-tabs">
+          <button type="button" class="tab-btn active" data-tab="findingsTab">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>Audit Findings</span>
+            <span id="findingsCountBadge" class="tab-badge">0</span>
+          </button>
+
+          <button type="button" class="tab-btn" data-tab="categoriesTab">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Threat Vectors</span>
+          </button>
+
+          <button type="button" class="tab-btn" data-tab="remediationTab">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+              <polyline points="22 4 12 14.01 9 11.01"/>
+            </svg>
+            <span>Remediation</span>
+          </button>
+
+          <button type="button" class="tab-btn" data-tab="modelDetailsTab">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="16" x2="12" y2="12"/>
+              <line x1="12" y1="8" x2="12.01" y2="8"/>
+            </svg>
+            <span>ML Telemetry</span>
+          </button>
+        </div>
+
+        <!-- Dashboard Content Body -->
+        <div class="dashboard-body">
+          
+          <!-- STATE 1: Idle Placeholder -->
+          <div id="idleState" class="state-container">
+            <div class="idle-graphic">
+              <div class="radar-circle circle-3"></div>
+              <div class="radar-circle circle-2"></div>
+              <div class="radar-circle circle-1"></div>
+              <div class="radar-sweep"></div>
+              <div class="radar-center-icon">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                </svg>
+              </div>
+            </div>
+            <h3 class="idle-title">Ready to Audit Smart Contract</h3>
+            <p class="idle-description">
+              Select one of the sample contracts on the left or paste Solidity source code to trigger high-dimensional TF-IDF vectorization and dual-stage vulnerability detection.
+            </p>
+            <div class="feature-bullets">
+              <div class="bullet-item">
+                <span class="bullet-check">✓</span>
+                <span>Exact line-level code localization</span>
+              </div>
+              <div class="bullet-item">
+                <span class="bullet-check">✓</span>
+                <span>One-vs-Rest 8-category multi-label scoring</span>
+              </div>
+              <div class="bullet-item">
+                <span class="bullet-check">✓</span>
+                <span>Checks-Effects-Interactions & safe access fixes</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATE 2: Scanning HUD -->
+          <div id="scanningState" class="state-container hidden">
+            <div class="scanner-hud">
+              <div class="hud-spinner">
+                <div class="spinner-ring"></div>
+                <div class="spinner-core"></div>
+              </div>
+              <h3 class="hud-title">Executing Deep Security Inspection...</h3>
+              <p class="hud-subtitle">Analyzing lexical n-grams & Solidity syntax trees</p>
+              
+              <div class="scan-progress-bar-wrapper">
+                <div id="scanProgressBar" class="scan-progress-bar"></div>
+              </div>
+
+              <div class="hud-steps">
+                <div class="hud-step active" id="step1">
+                  <span class="step-indicator"></span>
+                  <span>Stripping Comments & Token Normalization</span>
+                </div>
+                <div class="hud-step" id="step2">
+                  <span class="step-indicator"></span>
+                  <span>50,000 TF-IDF Feature Extraction</span>
+                </div>
+                <div class="hud-step" id="step3">
+                  <span class="step-indicator"></span>
+                  <span>Linear SVM Hyperplane Evaluation</span>
+                </div>
+                <div class="hud-step" id="step4">
+                  <span class="step-indicator"></span>
+                  <span>One-vs-Rest Multi-Label Inference</span>
+                </div>
+                <div class="hud-step" id="step5">
+                  <span class="step-indicator"></span>
+                  <span>Rule-Based Line Localization & CEI Verification</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- STATE 3: Audit Results (Populated via JS) -->
+          <div id="resultsState" class="results-container hidden">
+            
+            <!-- Verdict Hero Banner -->
+            <div id="verdictBanner" class="verdict-banner">
+              <div class="verdict-main">
+                <div class="verdict-icon-box" id="verdictIconBox">
+                  <!-- Injected via JS -->
+                </div>
+                <div class="verdict-text-group">
+                  <div class="verdict-badge-row">
+                    <span id="verdictBadge" class="verdict-pill">CRITICAL RISK</span>
+                    <span id="latencyBadge" class="latency-pill">24ms</span>
+                  </div>
+                  <h3 id="verdictHeading" class="verdict-heading">Potentially Vulnerable</h3>
+                  <p id="verdictSummary" class="verdict-summary">Contract contains critical patterns vulnerable to exploitation.</p>
+                </div>
+              </div>
+
+              <div class="risk-meter-box">
+                <div class="risk-score-circle" id="riskScoreCircle">
+                  <svg viewBox="0 0 36 36" class="circular-chart">
+                    <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    <path id="circleProgress" class="circle" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                    <text x="18" y="20.35" class="percentage" id="riskScoreNumber">85</text>
+                  </svg>
+                </div>
+                <span class="risk-score-caption">RISK SCORE</span>
+              </div>
+            </div>
+
+            <!-- Key Metric Mini Cards -->
+            <div class="kpi-grid">
+              <div class="kpi-box">
+                <span class="kpi-title">SVM CLASSIFICATION</span>
+                <span id="kpiSvmPred" class="kpi-value text-danger">Vulnerable (1)</span>
+                <span id="kpiSvmConf" class="kpi-sub">Confidence: 94.2%</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-title">DECISION SCORE</span>
+                <span id="kpiDecisionScore" class="kpi-value">+1.8492</span>
+                <span class="kpi-sub">Hyperplane Margin Distance</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-title">VERIFIED MISTAKES</span>
+                <span id="kpiFindingCount" class="kpi-value text-amber">2 Lines</span>
+                <span class="kpi-sub">Static AST Matches</span>
+              </div>
+              <div class="kpi-box">
+                <span class="kpi-title">TOTAL LOC</span>
+                <span id="kpiLoc" class="kpi-value">38 Lines</span>
+                <span id="kpiSloc" class="kpi-sub">28 Executable SLOC</span>
+              </div>
+            </div>
+
+            <!-- TAB 1: Verified Code Findings -->
+            <div id="findingsTab" class="tab-pane active">
+              <div class="section-title-row">
+                <h4>Verified Vulnerable Code Lines & Patterns</h4>
+                <span class="sub-hint">Click finding to highlight code in editor</span>
+              </div>
+
+              <div id="findingsList" class="findings-list">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- TAB 2: Threat Vectors & Classification Probabilities -->
+            <div id="categoriesTab" class="tab-pane">
+              <div class="section-title-row">
+                <h4>Multi-Label Classification Probabilities (8 Categories)</h4>
+                <span class="sub-hint">One-vs-Rest Logistic Regression Output</span>
+              </div>
+
+              <div id="categoriesList" class="categories-bars-grid">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- TAB 3: Remediation & Solutions -->
+            <div id="remediationTab" class="tab-pane">
+              <div class="section-title-row">
+                <h4>Actionable Security Remediation & Fixes</h4>
+                <span class="sub-hint">Best practices to eliminate detected attack vectors</span>
+              </div>
+
+              <div id="remediationList" class="remediation-cards">
+                <!-- Injected via JS -->
+              </div>
+            </div>
+
+            <!-- TAB 4: ML Architecture & Telemetry -->
+            <div id="modelDetailsTab" class="tab-pane">
+              <div class="section-title-row">
+                <h4>Machine Learning Pipeline Specs</h4>
+                <span class="sub-hint">Empirical parameters from research implementation</span>
+              </div>
+
+              <div class="telemetry-grid">
+                <div class="telemetry-card">
+                  <div class="tel-label">Detection Algorithm</div>
+                  <div class="tel-val">Linear Support Vector Machine (LinearSVC)</div>
+                  <p class="tel-desc">High-dimensional linear hyperplane maximizing margin separation between known clean and vulnerable contracts.</p>
+                </div>
+                <div class="telemetry-card">
+                  <div class="tel-label">Classification Algorithm</div>
+                  <div class="tel-val">One-vs-Rest Logistic Regression (8 Models)</div>
+                  <p class="tel-desc">Ensemble of binary classifiers determining posterior probability across independent vulnerability categories.</p>
+                </div>
+                <div class="telemetry-card">
+                  <div class="tel-label">TF-IDF Vector Space</div>
+                  <div class="tel-val">50,000 Unigrams & Bigrams</div>
+                  <p class="tel-desc">Comments stripped, lowercase normalized, sublinear term-frequency scaling with L2 norm.</p>
+                </div>
+                <div class="telemetry-card">
+                  <div class="tel-label">Confidence Proxy Formula</div>
+                  <div class="tel-val">Confidence = 1 / (1 + exp(-|s|))</div>
+                  <p class="tel-desc">Transforms the raw signed decision distance s into a normalized statistical certainty percentage.</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Action Toolbar -->
+            <div class="export-actions-bar">
+              <button type="button" id="copyMarkdownReportBtn" class="btn-secondary">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                  <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+                </svg>
+                <span>Export Markdown Audit</span>
+              </button>
+
+              <button type="button" id="downloadJsonBtn" class="btn-secondary">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Download JSON Report</span>
+              </button>
+            </div>
+
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Notification Toast -->
+  <div id="toast" class="toast">
+    <span id="toastIcon" class="toast-icon"></span>
+    <span id="toastMsg" class="toast-msg">Contract loaded successfully</span>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
