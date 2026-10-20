@@ -142,8 +142,9 @@
           </div>
         </div>
 
-        <!-- Custom Code Editor with Line Numbers -->
+        <!-- Custom Code Editor with Monaco and Fallback Line Numbers -->
         <div class="editor-container" id="editorContainer">
+          <div id="monacoHost" class="monaco-host"></div>
           <div class="line-gutter" id="lineGutter">1</div>
           <textarea 
             id="codeEditor" 
@@ -443,6 +444,68 @@
     <span id="toastMsg" class="toast-msg">Contract loaded successfully</span>
   </div>
 
+  <!-- Patch Diff Modal -->
+  <div id="patchModal" class="modal-backdrop hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-shield-icon">🛡️</span>
+          <div>
+            <h3 id="patchModalTitle" class="modal-title">Security Remediation Patch</h3>
+            <span id="patchModalSubtitle" class="modal-subtitle">Checks-Effects-Interactions (CEI) Implementation</span>
+          </div>
+        </div>
+        <button type="button" id="closePatchModalBtn" class="btn-close-modal" aria-label="Close modal">&times;</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="diff-split-container">
+          <div class="diff-pane diff-vulnerable">
+            <div class="diff-pane-header">
+              <span class="diff-status-dot dot-danger"></span>
+              <span>Vulnerable Code (Line <span id="patchLineNum">--</span>)</span>
+            </div>
+            <pre id="patchOriginalCode" class="diff-code"><code>// Original code</code></pre>
+          </div>
+
+          <div class="diff-pane diff-remediated">
+            <div class="diff-pane-header">
+              <span class="diff-status-dot dot-success"></span>
+              <span>Remediated Code (Secure Fix)</span>
+            </div>
+            <pre id="patchFixedCode" class="diff-code"><code>// Fixed code</code></pre>
+          </div>
+        </div>
+
+        <div class="unified-diff-box">
+          <div class="unified-diff-header">Unified Git-Style Diff</div>
+          <pre id="patchDiffPreview" class="unified-diff-code"><code>--- a/contract.sol
++++ b/contract.sol</code></pre>
+        </div>
+
+        <div class="patch-explanation-box" id="patchExplanationText">
+          Loading remediation rationale...
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="copyPatchCodeBtn" class="btn-secondary">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+            <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+          </svg>
+          <span>Copy Fixed Code</span>
+        </button>
+
+        <button type="button" id="applyPatchBtn" class="btn-primary">
+          <span>⚡ Apply Patch Directly Into Editor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monaco Editor Loader from CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.45.0/min/vs/loader.min.js"></script>
   <script src="/static/app.js"></script>
 </body>
 </html>

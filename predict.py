@@ -315,6 +315,115 @@ def check_missing_owner_authorization(raw_lines, cleaned_lines):
     return findings
 
 
+def generate_patch_suggestion(raw_line, category_key, pattern_name):
+    """Generate realistic secure replacement code, git-style unified diff, and remediation explanation for findings."""
+    stripped = raw_line.strip()
+    indent = raw_line[:len(raw_line) - len(raw_line.lstrip())]
+    if not indent and raw_line.startswith("Line "):
+        # In case a formatted line like "Line 12: ..." is passed, extract actual code
+        parts = raw_line.split(":", 1)
+        if len(parts) == 2:
+            stripped = parts[1].strip()
+            indent = "    "
+
+    if category_key == "access_control":
+        if "tx.origin" in stripped:
+            fixed = stripped.replace("tx.origin", "msg.sender") + " // Replaced tx.origin with msg.sender to mitigate phishing"
+            return {
+                "original": stripped,
+                "fixed": fixed,
+                "diff": f"- {stripped}\n+ {fixed}",
+                "explanation": "Using `msg.sender` instead of `tx.origin` ensures only direct callers are authorized, preventing phishing contract proxy attacks where an attacker tricks the victim into forwarding a transaction."
+            }
+        elif "changeOwner" in pattern_name or "owner" in pattern_name.lower():
+            fixed = f'{indent}require(msg.sender == owner, "Caller is not owner");\n{raw_line}'
+            return {
+                "original": stripped,
+                "fixed": fixed.strip(),
+                "diff": f"+ {indent}require(msg.sender == owner, \"Caller is not owner\");\n  {stripped}",
+                "explanation": "Enforcing `require(msg.sender == owner)` at the start of administrative functions or applying the OpenZeppelin `onlyOwner` modifier prevents unauthorized callers from hijacking contract ownership."
+            }
+        elif "selfdestruct" in stripped or "suicide" in stripped:
+            fixed = f'{indent}require(msg.sender == owner, "Unauthorized destruction");\n{raw_line}'
+            return {
+                "original": stripped,
+                "fixed": fixed.strip(),
+                "diff": f"+ {indent}require(msg.sender == owner, \"Unauthorized destruction\");\n  {stripped}",
+                "explanation": "Guarding destruction methods with owner-only access controls stops griefing and total depletion of contract bytecode and balance by unauthenticated attackers."
+            }
+        elif "delegatecall" in stripped:
+            fixed = f'{indent}require(msg.sender == trustedAdmin, "Restricted delegatecall");\n{raw_line}'
+            return {
+                "original": stripped,
+                "fixed": fixed.strip(),
+                "diff": f"+ {indent}require(msg.sender == trustedAdmin, \"Restricted delegatecall\");\n  {stripped}",
+                "explanation": "Low-level delegatecall preserves storage context (`msg.sender` and storage slots). Restricting caller access to trusted admin accounts prevents arbitrary storage corruption."
+            }
+    elif category_key == "reentrancy":
+        fixed = (
+            f"// [CEI Pattern Fix] Update contract internal balances/state BEFORE external call:\n"
+            f"{indent}balances[msg.sender] = 0;\n"
+            f"{indent}(bool success, ) = msg.sender.call{{value: userBalance}}(\"\");\n"
+            f"{indent}require(success, \"External call failed\");"
+        )
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "The Checks-Effects-Interactions (CEI) design pattern guarantees that contract state (e.g. user balances) is zeroed out BEFORE sending ether externally, eliminating recursive reentry drain vulnerabilities."
+        }
+    elif category_key == "unchecked_low_calls":
+        if ".call" in stripped:
+            fixed = f'(bool success, ) = {stripped.lstrip()};\n{indent}require(success, "External call failed");'
+        else:
+            fixed = f'bool success = {stripped.lstrip()};\n{indent}require(success, "Send failed");'
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "Solidity low-level calls (`.call()`, `.send()`, `.delegatecall()`) do not revert automatically on sub-call failure; they return a boolean flag that must be explicitly verified with `require(success)`."
+        }
+    elif category_key == "arithmetic":
+        fixed = "pragma solidity ^0.8.20; // Upgrade to Solidity 0.8+ with built-in overflow checks"
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "Solidity 0.8.0 and later automatically injects arithmetic overflow and underflow checks that revert transactions, obsoleting older vulnerable SafeMath omissions."
+        }
+    elif category_key == "bad_randomness":
+        fixed = "// Use Chainlink VRF for cryptographic verifiable randomness\n" + indent + "uint256 requestId = s_vrfCoordinator.requestRandomWords(...);"
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "On-chain variables like `block.timestamp`, `block.number`, and `blockhash` are deterministic and subject to validator/miner manipulation. Use Chainlink VRF or commit-reveal schemes for secure randomness."
+        }
+    elif category_key == "denial_service":
+        fixed = "// Replace push payments in loops with pull-over-push withdrawals:\n" + indent + "pendingWithdrawals[user] += amount;"
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "Push payments inside iteration loops can be indefinitely blocked if a malicious contract receiver rejects transfers or if gas consumption exceeds block limits. Use the Pull-Payment pattern instead."
+        }
+    elif category_key == "time_manipulation":
+        fixed = f"// Allow a safe multi-minute buffer instead of strict equality on timestamps:\n{indent}require(block.timestamp >= unlockTime + 15 minutes, \"Time lock active\");"
+        return {
+            "original": stripped,
+            "fixed": fixed,
+            "diff": f"- {stripped}\n+ {fixed}",
+            "explanation": "Miners can manipulate block timestamps by roughly 15 seconds. Avoid strict equality checks (`==`) and ensure logic tolerates variance over multi-minute intervals."
+        }
+
+    return {
+        "original": stripped,
+        "fixed": f"// Security fix: Review and enforce strict checks\n{stripped}",
+        "diff": f"- {stripped}\n+ // Reviewed and patched\n+ {stripped}",
+        "explanation": "Review state variable updates and external interactions to ensure proper authorization and defensive validation."
+    }
+
+
 def check_basic_code_patterns(source_code):
     """
     Scan the original Solidity code line by line (ignoring comments) to find
@@ -326,7 +435,12 @@ def check_basic_code_patterns(source_code):
     verified_findings = []
 
     # 1. Check for missing owner authorization in changeOwner()
-    verified_findings.extend(check_missing_owner_authorization(raw_lines, cleaned_lines))
+    owner_findings = check_missing_owner_authorization(raw_lines, cleaned_lines)
+    for of in owner_findings:
+        func_line = raw_lines[of["line_number"] - 1] if 0 <= of["line_number"] - 1 < len(raw_lines) else ""
+        of["line_content"] = func_line.strip()
+        of["patch_info"] = generate_patch_suggestion(func_line, of["category_key"], of["pattern_name"])
+    verified_findings.extend(owner_findings)
 
     # 2. Check line-by-line regex rules
     for line_idx, line_clean in enumerate(cleaned_lines):
@@ -344,15 +458,19 @@ def check_basic_code_patterns(source_code):
                     if not re.search(r"\.\s*(transfer|send|call)\b", nearby):
                         continue
 
+                patch_info = generate_patch_suggestion(raw_line, rule["category"], rule["pattern_name"])
+
                 verified_findings.append(
                     {
                         "line_number": line_number,
                         "code_line": f"Line {line_number}: {raw_line.strip()}",
+                        "line_content": raw_line.strip(),
                         "category_key": rule["category"],
                         "category_name": CATEGORY_DISPLAY_NAMES[rule["category"]],
                         "pattern_name": rule["pattern_name"],
                         "coding_mistake": rule["mistake_explanation"],
                         "suggested_fix": CATEGORY_KNOWLEDGE[rule["category"]]["suggested_solution"],
+                        "patch_info": patch_info,
                     }
                 )
 
