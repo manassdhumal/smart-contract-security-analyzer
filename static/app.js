@@ -31,6 +31,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const copyPatchCodeBtn = document.getElementById('copyPatchCodeBtn');
   const applyPatchBtn = document.getElementById('applyPatchBtn');
 
+  // Web3 / Blockchain Contract Import Elements
+  const openWeb3ImportBtn = document.getElementById('openWeb3ImportBtn');
+  const web3ImportModal = document.getElementById('web3ImportModal');
+  const closeWeb3ModalBtn = document.getElementById('closeWeb3ModalBtn');
+  const cancelWeb3ModalBtn = document.getElementById('cancelWeb3ModalBtn');
+  const submitWeb3FetchBtn = document.getElementById('submitWeb3FetchBtn');
+  const web3NetworkSelect = document.getElementById('web3NetworkSelect');
+  const web3AddressInput = document.getElementById('web3AddressInput');
+  const web3StatusBox = document.getElementById('web3StatusBox');
+  const web3StatusText = document.getElementById('web3StatusText');
+  const presetPillBtns = document.querySelectorAll('.preset-pill-btn');
+
   // Scanning & Result View States
   const idleState = document.getElementById('idleState');
   const scanningState = document.getElementById('scanningState');
@@ -730,7 +742,123 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // --- 9. Report Export Actions ---
+  // --- 9. Web3 / Blockchain Contract Import Controller ---
+  function openWeb3Modal() {
+    if (!web3ImportModal) return;
+    web3ImportModal.classList.remove('hidden');
+    if (web3StatusBox) web3StatusBox.classList.add('hidden');
+    if (web3AddressInput) {
+      web3AddressInput.focus();
+      web3AddressInput.select();
+    }
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeWeb3Modal() {
+    if (!web3ImportModal) return;
+    web3ImportModal.classList.add('hidden');
+    if (web3StatusBox) web3StatusBox.classList.add('hidden');
+    document.body.style.overflow = '';
+  }
+
+  if (openWeb3ImportBtn) {
+    openWeb3ImportBtn.addEventListener('click', openWeb3Modal);
+  }
+
+  if (closeWeb3ModalBtn) {
+    closeWeb3ModalBtn.addEventListener('click', closeWeb3Modal);
+  }
+
+  if (cancelWeb3ModalBtn) {
+    cancelWeb3ModalBtn.addEventListener('click', closeWeb3Modal);
+  }
+
+  if (web3ImportModal) {
+    web3ImportModal.addEventListener('click', (e) => {
+      if (e.target === web3ImportModal) closeWeb3Modal();
+    });
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && web3ImportModal && !web3ImportModal.classList.contains('hidden')) {
+      closeWeb3Modal();
+    }
+  });
+
+  presetPillBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const addr = btn.getAttribute('data-addr');
+      const net = btn.getAttribute('data-net');
+      if (addr && web3AddressInput) web3AddressInput.value = addr;
+      if (net && web3NetworkSelect) web3NetworkSelect.value = net;
+      fetchWeb3Contract();
+    });
+  });
+
+  async function fetchWeb3Contract() {
+    const address = (web3AddressInput ? web3AddressInput.value : '').trim();
+    const network = web3NetworkSelect ? web3NetworkSelect.value : 'mainnet';
+
+    const ethRegex = /^0x[a-fA-F0-9]{40}$/;
+    if (!ethRegex.test(address)) {
+      showWeb3Status('Invalid Ethereum address. Must be a 42-character hex address starting with 0x.', true);
+      return;
+    }
+
+    if (submitWeb3FetchBtn) submitWeb3FetchBtn.disabled = true;
+    showWeb3Status(`Connecting to ${network} explorer & retrieving verified Solidity source...`, false);
+
+    try {
+      const resp = await fetch(`/api/fetch-contract?address=${encodeURIComponent(address)}&network=${encodeURIComponent(network)}`);
+      const data = await resp.json();
+
+      if (!resp.ok) {
+        throw new Error(data.detail || `Explorer returned status ${resp.status}`);
+      }
+
+      setEditorCode(data.code);
+      closeWeb3Modal();
+      sampleSelect.value = '';
+
+      showToast(`Imported "${data.contract_name}" (${data.files_count} file${data.files_count > 1 ? 's' : ''}) from ${data.network}!`, 'success');
+
+      // Auto-trigger security audit for the newly imported contract
+      setTimeout(() => {
+        runSecurityAudit();
+      }, 400);
+
+    } catch (err) {
+      showWeb3Status(err.message, true);
+    } finally {
+      if (submitWeb3FetchBtn) submitWeb3FetchBtn.disabled = false;
+    }
+  }
+
+  function showWeb3Status(msg, isError = false) {
+    if (!web3StatusBox || !web3StatusText) return;
+    web3StatusBox.classList.remove('hidden');
+    web3StatusText.textContent = msg;
+    if (isError) {
+      web3StatusBox.classList.add('error');
+    } else {
+      web3StatusBox.classList.remove('error');
+    }
+  }
+
+  if (submitWeb3FetchBtn) {
+    submitWeb3FetchBtn.addEventListener('click', fetchWeb3Contract);
+  }
+
+  if (web3AddressInput) {
+    web3AddressInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        fetchWeb3Contract();
+      }
+    });
+  }
+
+  // --- 10. Report Export Actions ---
   copyMarkdownReportBtn.addEventListener('click', () => {
     if (!lastAuditData) {
       showToast('No audit data to export. Run an audit first.', 'warning');

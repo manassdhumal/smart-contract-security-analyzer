@@ -6,10 +6,13 @@ Replaces the basic Streamlit interface with a rich, modern Web3 audit dashboard.
 """
 
 import os
+import re
+import json
 import time
 from pathlib import Path
 from typing import Dict, Any, List
 
+import httpx
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
@@ -155,6 +158,162 @@ async def get_sample_content(filename: str):
         return {"filename": clean_name, "code": content}
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Failed to read contract: {str(exc)}")
+
+BLOCKSCOUT_NETWORKS = {
+    "mainnet": {"name": "Ethereum Mainnet", "base_url": "https://eth.blockscout.com", "chain_id": 1},
+    "sepolia": {"name": "Sepolia Testnet", "base_url": "https://eth-sepolia.blockscout.com", "chain_id": 11155111},
+    "base": {"name": "Base Mainnet", "base_url": "https://base.blockscout.com", "chain_id": 8453},
+    "arbitrum": {"name": "Arbitrum One", "base_url": "https://arbitrum.blockscout.com", "chain_id": 42161},
+    "optimism": {"name": "Optimism Mainnet", "base_url": "https://optimism.blockscout.com", "chain_id": 10},
+    "polygon": {"name": "Polygon PoS", "base_url": "https://polygon.blockscout.com", "chain_id": 137},
+    "gnosis": {"name": "Gnosis Chain", "base_url": "https://gnosis.blockscout.com", "chain_id": 100},
+}
+
+ETH_ADDRESS_REGEX = re.compile(r"^0x[a-fA-F0-9]{40}$")
+
+def parse_etherscan_source(raw_source: str) -> str:
+    """Handle standard single-file or JSON-wrapped multi-file Etherscan source payloads."""
+    raw = raw_source.strip()
+    if raw.startswith("{{") and raw.endswith("}}"):
+        raw = raw[1:-1]
+    if raw.startswith("{") and raw.endswith("}"):
+        try:
+            parsed = json.loads(raw)
+            sources = parsed.get("sources", {})
+            if sources:
+                parts = []
+                for fname, fcontent in sources.items():
+                    content_str = fcontent.get("content", "")
+                    parts.append(f"// ==========================================\n// File: {fname}\n// ==========================================\n{content_str}")
+                return "\n\n".join(parts)
+        except Exception:
+            pass
+    return raw
+
+@app.get("/api/fetch-contract")
+async def fetch_verified_contract(
+    address: str,
+    network: str = "mainnet",
+    api_key: str = "",
+    use_etherscan: bool = False
+):
+    """
+    Fetch verified Solidity source code directly by contract address.
+    Supports Blockscout (zero-config, free public explorer) and Etherscan API V2.
+    """
+    clean_addr = address.strip()
+    if not ETH_ADDRESS_REGEX.match(clean_addr):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Ethereum contract address format. Expected a 42-character hex address starting with 0x (e.g., 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)."
+        )
+
+    net_key = network.lower().strip()
+    if net_key not in BLOCKSCOUT_NETWORKS:
+        valid_nets = ", ".join(BLOCKSCOUT_NETWORKS.keys())
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported network '{network}'. Supported networks: {valid_nets}"
+        )
+
+    net_info = BLOCKSCOUT_NETWORKS[net_key]
+
+    # Check if Etherscan API key is provided
+    etherscan_key = api_key.strip() or os.getenv("ETHERSCAN_API_KEY", "").strip()
+    if use_etherscan and etherscan_key:
+        try:
+            async with httpx.AsyncClient(timeout=15.0) as client:
+                url = "https://api.etherscan.io/v2/api"
+                params = {
+                    "chainid": net_info["chain_id"],
+                    "module": "contract",
+                    "action": "getsourcecode",
+                    "address": clean_addr,
+                    "apikey": etherscan_key
+                }
+                resp = await client.get(url, params=params)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    if data.get("status") == "1" and data.get("result"):
+                        result = data["result"][0]
+                        contract_name = result.get("ContractName", "Contract")
+                        raw_source = result.get("SourceCode", "")
+                        if raw_source:
+                            source_code = parse_etherscan_source(raw_source)
+                            return {
+                                "source": "etherscan",
+                                "network": net_info["name"],
+                                "network_key": net_key,
+                                "address": clean_addr,
+                                "contract_name": contract_name,
+                                "compiler_version": result.get("CompilerVersion", "Unknown"),
+                                "optimization_used": result.get("OptimizationUsed", "0") == "1",
+                                "code": source_code,
+                                "files_count": 1
+                            }
+        except Exception:
+            # Fall back to Blockscout seamlessly
+            pass
+
+    # Blockscout public explorer lookup
+    blockscout_url = f"{net_info['base_url']}/api/v2/smart-contracts/{clean_addr}"
+    try:
+        async with httpx.AsyncClient(timeout=15.0) as client:
+            resp = await client.get(blockscout_url)
+            if resp.status_code == 404:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Contract at {clean_addr} was not found or is not verified on {net_info['name']}."
+                )
+            if resp.status_code != 200:
+                raise HTTPException(
+                    status_code=resp.status_code,
+                    detail=f"Explorer returned HTTP {resp.status_code}: {resp.text[:180]}"
+                )
+
+            data = resp.json()
+            main_code = data.get("source_code", "")
+            additional = data.get("additional_sources", []) or []
+
+            if not main_code and not additional:
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"No verified Solidity source code available for {clean_addr} on {net_info['name']}."
+                )
+
+            contract_name = data.get("name") or "VerifiedContract"
+
+            if additional:
+                assembled_sources = []
+                file_path = data.get("file_path") or f"{contract_name}.sol"
+                assembled_sources.append(f"// ==========================================\n// Main Contract: {file_path}\n// ==========================================\n{main_code}")
+                for item in additional:
+                    item_path = item.get("file_path", "dependency.sol")
+                    item_code = item.get("source_code", "")
+                    assembled_sources.append(f"// ==========================================\n// Dependency: {item_path}\n// ==========================================\n{item_code}")
+                combined_code = "\n\n".join(assembled_sources)
+            else:
+                combined_code = main_code
+
+            return {
+                "source": "blockscout",
+                "network": net_info["name"],
+                "network_key": net_key,
+                "address": clean_addr,
+                "contract_name": contract_name,
+                "compiler_version": data.get("compiler_version", "Unknown"),
+                "evm_version": data.get("evm_version", "Default"),
+                "optimization_enabled": data.get("optimization_enabled", False),
+                "code": combined_code,
+                "files_count": 1 + len(additional),
+                "explorer_url": f"{net_info['base_url']}/address/{clean_addr}"
+            }
+    except HTTPException:
+        raise
+    except httpx.TimeoutException:
+        raise HTTPException(status_code=504, detail=f"Request to {net_info['name']} timed out. Please try again.")
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch contract: {str(exc)}")
 
 @app.get("/api/model-info")
 async def model_info():

@@ -7,12 +7,14 @@ A modern, explainable AI and AST-based vulnerability detection system for Ethere
 
 ## Key Features
 
-- **Modern Web3 Cyber Dashboard**: Dual-panel studio featuring a responsive code editor with synchronized line numbers, drag-and-drop `.sol` uploads, and animated scanning HUD.
+- **Embedded Monaco IDE & Solidity Highlighting**: Full Monaco code studio equipped with custom Solidity keywords, tokens, shortcuts (<kbd>Ctrl</kbd> + <kbd>Enter</kbd> to audit), and resilient line-gutter fallback.
+- **Web3 Blockchain Contract Importer**: Directly fetch verified Solidity source code by contract address from Ethereum Mainnet, Sepolia, Base, Arbitrum, Optimism, Polygon, and Gnosis via decentralized Blockscout and Etherscan API V2.
+- **Interactive Remediation & Git-Style Diffs**: Visual split comparison (Vulnerable vs Remediated) with automated patch generator and 1-click **"Apply Patch Into Editor"** replacement.
 - **Dual-Stage ML Detection**: 
   - **Stage 1 (Binary Detection)**: Linear Support Vector Machine (LinearSVC) over 50,000 TF-IDF unigram and bigram features.
   - **Stage 2 (Classification)**: One-vs-Rest (OvR) Logistic Regression classifying 8 independent threat vectors.
 - **Zero-Hallucination Line Localization**: Static AST pattern matching pinpointing the exact code line, explaining the flaw, and providing verifiable remediation fixes.
-- **Interactive Remediation & Reporting**: One-click Markdown Security Audit export and downloadable JSON audit reports.
+- **Audit Reporting**: One-click Markdown Security Audit export and downloadable JSON audit reports.
 
 ---
 

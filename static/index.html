@@ -128,6 +128,15 @@
               <span>Upload .sol</span>
             </label>
 
+            <button type="button" id="openWeb3ImportBtn" class="btn-tool btn-web3-glow" title="Import verified contract directly from Ethereum / Blockscout / Etherscan">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="2" y1="12" x2="22" y2="12"></line>
+                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
+              </svg>
+              <span>🌐 Web3 Import</span>
+            </button>
+
             <button type="button" id="clearBtn" class="btn-tool" title="Clear Code Editor">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="3 6 5 6 21 6"></polyline>
@@ -499,6 +508,73 @@
 
         <button type="button" id="applyPatchBtn" class="btn-primary">
           <span>⚡ Apply Patch Directly Into Editor</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Web3 / Blockchain Contract Import Modal -->
+  <div id="web3ImportModal" class="modal-backdrop hidden">
+    <div class="modal-card modal-card-sm">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <span class="modal-shield-icon">🌐</span>
+          <div>
+            <h3 class="modal-title">Import On-Chain Smart Contract</h3>
+            <span class="modal-subtitle">Fetch verified Solidity source code across multiple EVM networks</span>
+          </div>
+        </div>
+        <button type="button" id="closeWeb3ModalBtn" class="btn-close-modal" aria-label="Close modal">&times;</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="input-group">
+          <label for="web3NetworkSelect" class="form-label">Blockchain Network</label>
+          <div class="custom-select-wrapper full-width">
+            <select id="web3NetworkSelect" class="custom-select full-width">
+              <option value="mainnet">Ethereum Mainnet (Chain ID 1)</option>
+              <option value="sepolia">Sepolia Testnet (Chain ID 11155111)</option>
+              <option value="base">Base Mainnet (Chain ID 8453)</option>
+              <option value="arbitrum">Arbitrum One (Chain ID 42161)</option>
+              <option value="optimism">Optimism Mainnet (Chain ID 10)</option>
+              <option value="polygon">Polygon PoS (Chain ID 137)</option>
+              <option value="gnosis">Gnosis Chain (Chain ID 100)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="web3AddressInput" class="form-label">Contract Address (0x...)</label>
+          <input 
+            type="text" 
+            id="web3AddressInput" 
+            class="form-input" 
+            placeholder="0x... (e.g. 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)" 
+            autocomplete="off"
+            spellcheck="false"
+          >
+        </div>
+
+        <div class="presets-section">
+          <span class="presets-label">Quick Presets:</span>
+          <div class="web3-presets-pills">
+            <button type="button" class="preset-pill-btn" data-addr="0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2" data-net="mainnet">WETH9</button>
+            <button type="button" class="preset-pill-btn" data-addr="0xdAC17F958D2ee523a2206206994597C13D831ec7" data-net="mainnet">USDT</button>
+            <button type="button" class="preset-pill-btn" data-addr="0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f" data-net="mainnet">Uniswap V2</button>
+            <button type="button" class="preset-pill-btn" data-addr="0x6B175474E89094C44Da98b954EedeAC495271d0F" data-net="mainnet">DAI</button>
+          </div>
+        </div>
+
+        <div id="web3StatusBox" class="web3-status-box hidden">
+          <div class="spinner-small" id="web3Spinner"></div>
+          <span id="web3StatusText" class="web3-status-text">Fetching verified bytecode & AST from explorer...</span>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" id="cancelWeb3ModalBtn" class="btn-secondary">Cancel</button>
+        <button type="button" id="submitWeb3FetchBtn" class="btn-primary">
+          <span>⚡ Import Source Code</span>
         </button>
       </div>
     </div>
